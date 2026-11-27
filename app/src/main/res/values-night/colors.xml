@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand">#8FD3BE</color>
+    <color name="on_brand">#00382D</color>
+    <color name="background">#0E1412</color>
+    <color name="card">#161D1B</color>
+    <color name="text_primary">#E3E8E5</color>
+    <color name="text_secondary">#A1ACA8</color>
+    <color name="outline">#29332F</color>
+    <color name="tonal">#1F3330</color>
+    <color name="on_tonal">#A9E3D1</color>
+    <color name="error">#F2B8B5</color>
+
+    <color name="state_on_bg">#173A31</color>
+    <color name="state_on_text">#8FD3BE</color>
+    <color name="state_on_outline">#3E6C5F</color>
+    <color name="state_off_bg">#3A221C</color>
+    <color name="state_off_text">#F0B4A6</color>
+    <color name="state_manual_bg">#232B28</color>
+    <color name="state_manual_text">#A1ACA8</color>
+
+    <color name="splash_background">#0E1412</color>
+</resources>

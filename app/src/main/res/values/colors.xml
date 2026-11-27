@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand: deep moss green on a warm off-white. The launcher colour is the same in both themes. -->
+    <color name="launcher_background">#1E5B4F</color>
+
+    <color name="brand">#1E5B4F</color>
+    <color name="on_brand">#FFFFFF</color>
+    <color name="background">#F6F7F5</color>
+    <color name="card">#FFFFFF</color>
+    <color name="text_primary">#15201D</color>
+    <color name="text_secondary">#5B6662</color>
+    <color name="outline">#DDE2DF</color>
+    <color name="tonal">#E3EEEA</color>
+    <color name="on_tonal">#1E5B4F</color>
+    <color name="error">#B3261E</color>
+
+    <color name="state_on_bg">#E1F0EA</color>
+    <color name="state_on_text">#1E5B4F</color>
+    <color name="state_on_outline">#B5D3C8</color>
+    <color name="state_off_bg">#F8E7E2</color>
+    <color name="state_off_text">#8A3B2B</color>
+    <color name="state_manual_bg">#ECEFED</color>
+    <color name="state_manual_text">#5B6662</color>
+
+    <color name="splash_background">#1E5B4F</color>
+</resources>

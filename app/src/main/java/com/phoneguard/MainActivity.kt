@@ -1,51 +1,61 @@
 package com.phoneguard
 
-import android.Manifest
-import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Typeface
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.widget.Button
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.progressindicator.LinearProgressIndicator
 
-class MainActivity : AppCompatActivity() {
-
-    private lateinit var statusText: TextView
-    private lateinit var logText: TextView
-
-    private class Step(
-        val title: String,
-        val description: String,
-        val buttonLabel: String,
-        val action: (() -> Unit)?,
-    )
+/** Home: protection status, setup progress and the latest events. */
+class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        statusText = findViewById(R.id.statusText)
-        logText = findViewById(R.id.logText)
-        findViewById<Button>(R.id.startButton).setOnClickListener { setProtection(true) }
-        findViewById<Button>(R.id.stopButton).setOnClickListener { setProtection(false) }
-        findViewById<Button>(R.id.refreshButton).setOnClickListener { refresh() }
-        buildChecklist()
+        setUpScreen(title = null, showBack = false)
+
+        findViewById<View>(R.id.turnOnButton).setOnClickListener { setProtection(true) }
+        findViewById<View>(R.id.turnOffButton).setOnClickListener { confirmTurnOff() }
+        findViewById<View>(R.id.setupButton).setOnClickListener { open(SetupActivity::class.java) }
+        findViewById<View>(R.id.setupCard).setOnClickListener { open(SetupActivity::class.java) }
+        findViewById<View>(R.id.viewLogButton).setOnClickListener { open(LogActivity::class.java) }
     }
 
     override fun onResume() {
         super.onResume()
         refresh()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.menu_setup -> open(SetupActivity::class.java).let { true }
+        R.id.menu_log -> open(LogActivity::class.java).let { true }
+        R.id.menu_about -> open(AboutActivity::class.java).let { true }
+        else -> super.onOptionsItemSelected(item)
+    }
+
+    private fun open(screen: Class<*>) = startActivity(Intent(this, screen))
+
+    private fun confirmTurnOff() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Turn off protection?")
+            .setMessage("Phone Guard will stop recording events until you turn it on again.")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Turn off") { _, _ -> setProtection(false) }
+            .show()
     }
 
     private fun setProtection(on: Boolean) {
@@ -55,139 +65,58 @@ class MainActivity : AppCompatActivity() {
         refresh()
     }
 
-    private fun steps(): List<Step> = listOf(
-        Step(
-            "1. Notifications",
-            "Needed on Android 13+ so the protection service can show its status notification.",
-            "Allow notifications",
-            action = {
-                if (Build.VERSION.SDK_INT >= 33) {
-                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
-                }
-            },
-        ),
-        Step(
-            "2. Location",
-            "Lets the app save where the phone was when something suspicious happens.",
-            "Allow location",
-            action = {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
-                    2,
-                )
-            },
-        ),
-        Step(
-            "3. Location: Allow all the time",
-            "Open this app's settings and set Location to 'Allow all the time' so it still works in the background.",
-            "Open app settings",
-            action = {
-                startActivity(
-                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")),
-                )
-            },
-        ),
-        Step(
-            "4. Battery",
-            "Remove battery restrictions for this app so the phone maker does not stop the service.",
-            "Open battery settings",
-            action = { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) },
-        ),
-        Step(
-            "5. Device admin",
-            "Makes the app harder to uninstall and lets it see wrong-PIN attempts.",
-            "Activate device admin",
-            action = { requestAdmin() },
-        ),
-        Step(
-            "6. Quick settings on the lock screen",
-            "Stops a thief turning on airplane mode from the lock screen. The name differs by brand. " +
-                "On ColorOS look for 'Allow Quick Settings on Lock screen' and turn it OFF. " +
-                "On other phones search the settings for 'lock screen' or 'quick settings'. " +
-                "The app cannot change this for you.",
-            "Open settings",
-            action = { startActivity(Intent(Settings.ACTION_SETTINGS)) },
-        ),
-        Step(
-            "7. Strong screen lock",
-            "Use a long PIN, password or biometrics. A weak or watched PIN lets a thief change settings.",
-            "Open security settings",
-            action = { startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS)) },
-        ),
-        Step(
-            "8. Google account and Find Hub",
-            "Keep your Google account signed in on the phone and Find Hub switched on. " +
-                "This keeps Google's factory reset protection working. The app cannot do this for you.",
-            "",
-            action = null,
-        ),
-    )
-
-    private fun buildChecklist() {
-        val container = findViewById<LinearLayout>(R.id.checklist)
-        for (step in steps()) {
-            container.addView(TextView(this).apply {
-                text = step.title
-                textSize = 16f
-                setTypeface(typeface, Typeface.BOLD)
-                setPadding(0, dp(12), 0, 0)
-            })
-            container.addView(TextView(this).apply {
-                text = step.description
-                textSize = 13f
-            })
-            val action = step.action
-            if (action != null) {
-                container.addView(Button(this).apply {
-                    text = step.buttonLabel
-                    setOnClickListener { action() }
-                })
-            }
-        }
-    }
-
-    private fun requestAdmin() {
-        val component = ComponentName(this, GuardAdminReceiver::class.java)
-        val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN)
-            .putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, component)
-            .putExtra(
-                DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                "Makes Phone Guard harder to remove and lets it record wrong unlock attempts.",
-            )
-        startActivity(intent)
-    }
-
     private fun refresh() {
-        val dpm = getSystemService(DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        val adminActive = dpm.isAdminActive(ComponentName(this, GuardAdminReceiver::class.java))
-        val locationGranted = ContextCompat.checkSelfPermission(
-            this, Manifest.permission.ACCESS_FINE_LOCATION,
-        ) == PackageManager.PERMISSION_GRANTED
-
-        statusText.text = "Protection: ${onOff(Prefs.isEnabled(this))}\n" +
-            "Device admin: ${yesNo(adminActive)}\n" +
-            "Location permission: ${yesNo(locationGranted)}"
-
-        val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-        val events = EventLog(this).readAll().takeLast(50).reversed()
-        logText.text = if (events.isEmpty()) {
-            "No events yet."
-        } else {
-            events.joinToString("\n\n") { e ->
-                val place = if (e.latitude != null && e.longitude != null) {
-                    "\n  at ${e.latitude}, ${e.longitude}"
-                } else {
-                    ""
-                }
-                val detail = if (e.detail.isNotEmpty()) "\n  ${e.detail}" else ""
-                "${format.format(Date(e.timeMillis))}  ${e.type.label}\n" +
-                    "  screen locked: ${yesNo(e.locked)}$detail$place"
-            }
-        }
+        showStatus(Prefs.isEnabled(this))
+        showSetup()
+        showRecent()
     }
 
-    private fun onOff(value: Boolean) = if (value) "ON" else "OFF"
-    private fun yesNo(value: Boolean) = if (value) "yes" else "no"
-    private fun dp(value: Int) = (value * resources.displayMetrics.density).toInt()
+    private fun showStatus(on: Boolean) {
+        val card = findViewById<MaterialCardView>(R.id.statusCard)
+        val pill = findViewById<TextView>(R.id.statusPill)
+        if (on) {
+            card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.state_on_bg))
+            card.strokeColor = ContextCompat.getColor(this, R.color.state_on_bg)
+            Ui.pill(pill, "On", R.color.brand, R.color.on_brand)
+        } else {
+            card.setCardBackgroundColor(ContextCompat.getColor(this, R.color.card))
+            card.strokeColor = ContextCompat.getColor(this, R.color.outline)
+            Ui.pill(pill, "Off", R.color.state_off_bg, R.color.state_off_text)
+        }
+        findViewById<TextView>(R.id.statusTitle).text = if (on) "Protected" else "Not protected"
+        findViewById<TextView>(R.id.statusBody).text = if (on) {
+            "Watching for airplane mode, shutdown, SIM changes and location being switched off."
+        } else {
+            "Turn on protection so suspicious events are recorded with the time and place."
+        }
+        findViewById<View>(R.id.turnOnButton).visibility = if (on) View.GONE else View.VISIBLE
+        findViewById<View>(R.id.turnOffButton).visibility = if (on) View.VISIBLE else View.GONE
+    }
+
+    private fun showSetup() {
+        val (done, total) = SetupSteps.progress(this)
+        findViewById<TextView>(R.id.setupTitle).text = "$done of $total steps done"
+        findViewById<LinearProgressIndicator>(R.id.setupProgress).apply {
+            max = total
+            setProgressCompat(done, false)
+        }
+        findViewById<TextView>(R.id.setupBody).text = if (done == total) {
+            "All checks pass. Two steps can only be checked by you; see Setup."
+        } else {
+            "Finish setup so protection keeps working when it matters."
+        }
+        findViewById<TextView>(R.id.setupButton).text = if (done == total) "Review setup" else "Continue setup"
+    }
+
+    private fun showRecent() {
+        val list = findViewById<LinearLayout>(R.id.recentList)
+        list.removeAllViews()
+        val events = EventLog(this).readAll().takeLast(3).reversed()
+        val inflater = LayoutInflater.from(this)
+        events.forEachIndexed { index, event ->
+            if (index > 0) list.addView(Ui.divider(list))
+            list.addView(Ui.eventRow(inflater, list, event))
+        }
+        findViewById<View>(R.id.recentEmpty).visibility = if (events.isEmpty()) View.VISIBLE else View.GONE
+    }
 }

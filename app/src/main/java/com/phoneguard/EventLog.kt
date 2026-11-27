@@ -29,6 +29,12 @@ class EventLog(context: Context) {
         }
     }
 
+    fun clear() {
+        synchronized(LOCK) {
+            if (file.exists()) file.delete()
+        }
+    }
+
     private fun trimIfNeeded() {
         val lines = file.readLines()
         if (lines.size > MAX_LINES) {
