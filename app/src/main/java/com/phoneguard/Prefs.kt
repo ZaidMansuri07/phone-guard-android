@@ -16,4 +16,15 @@ object Prefs {
     fun setEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_ENABLED, enabled).apply()
     }
+
+    /** System boot count for which a BOOT event was last saved (one value before unlock, one after). */
+    fun lastRecordedBoot(context: Context, beforeUnlock: Boolean): Int =
+        prefs(context).getInt(bootKey(beforeUnlock), -1)
+
+    fun setLastRecordedBoot(context: Context, beforeUnlock: Boolean, bootCount: Int) {
+        prefs(context).edit().putInt(bootKey(beforeUnlock), bootCount).commit()
+    }
+
+    private fun bootKey(beforeUnlock: Boolean) =
+        if (beforeUnlock) "last_boot_before_unlock" else "last_boot_after_unlock"
 }
