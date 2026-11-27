@@ -2,13 +2,17 @@
 
 Each phase should leave something that works and can be shown at a review.
 
-## Phase 1: event recorder (this commit)
+## Phase 1: event recorder
 
 - [x] Foreground service that records airplane mode, shutdown, boot, SIM state, location off
 - [x] Device admin receiver for wrong-PIN attempts and admin removal
-- [x] Local event log and a simple screen to view it
-- [x] Setup checklist (permissions, battery, admin, lock-screen quick settings, strong lock)
+- [x] Local event log with its own screen (share and clear)
+- [x] Setup checklist that checks each step's state (permissions, battery, admin, lock-screen quick settings, strong lock)
+- [x] App design: logo, launcher icon, splash screen, light and dark theme, Home, Setup, Event log and About screens
+- [x] Test the triggers on the emulator (results in the README)
+- [x] Record "Phone started" once per real restart (Android 15+ resends boot broadcasts after a force stop or update)
 - [ ] Test every trigger on a real phone and write down the results (these results go into the report)
+- [ ] PIN or biometric check before protection can be turned off
 
 ## Phase 2: server and heartbeat
 
@@ -37,8 +41,13 @@ Each phase should leave something that works and can be shown at a review.
 
 ## Things to verify early
 
+Emulator answers so far (Android 17). Each one still needs a real phone.
+
 - Does the airplane-mode broadcast reach the app while the phone is locked, and how quickly?
+  Emulator: yes, also before the first unlock after a restart. Delay not measured yet.
 - Is the shutdown broadcast delivered on current Android versions?
+  Emulator: yes on a normal restart, no on a forced one (`adb reboot`).
 - What can the app do after a forced restart before the first unlock?
+  Emulator: the service starts and records events, but there is often no last known location yet.
 - Can the app read the "quick settings on lock screen" setting on any phone?
 - Current Device Admin limits, SMS permission policy and accessibility restrictions for the target Android version.
